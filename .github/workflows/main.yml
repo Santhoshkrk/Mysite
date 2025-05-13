@@ -7,58 +7,46 @@ on:
 
 jobs:
   deploy:
-    name: Build & Deploy to VPS
+    name: Build & Deploy to EC2
     runs-on: ubuntu-latest
 
     steps:
+    # 1. Checkout the code from GitHub
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Debug IP
-      run: |
-        echo "IP is: ${{ secrets.SERVERIP }}"
-
+    # 2. Setup SSH access using ssh-agent
     - name: Setup SSH access using ssh-agent
       uses: webfactory/ssh-agent@v0.5.3
       with:
         ssh-private-key: ${{ secrets.PRIKEY }}
 
+    # 3. Clean the remote directory on EC2
     - name: Clean remote directory
       run: |
-        ssh -T -i ~/.ssh/id_rsa ${{ secrets.SERVERUSER }}@${{ secrets.SERVERIP }} << 'EOF'
+        ssh -T ${{ secrets.SERVERUSER }}@${{ secrets.SERVERIP }} << 'EOF'
           mkdir -p ~/my-website
           cd ~/my-website
           rm -rf *
         EOF
 
-    - name: Create Dockerfile on VPS
+    # 4. Create Dockerfile directly on the EC2 instance
+    - name: Create Dockerfile on EC2
       run: |
-        ssh -T -i ~/.ssh/id_rsa ${{ secrets.SERVERUSER }}@${{ secrets.SERVERIP }} << 'EOF'
+        ssh -T ${{ secrets.SERVERUSER }}@${{ secrets.SERVERIP }} << 'EOF'
           cat << 'EOF2' > ~/my-website/Dockerfile
-          # Use Node base image
           FROM node:18
-
-          # Set working directory
           WORKDIR /app
-
-          # Copy package files
           COPY package*.json ./
-
-          # Install dependencies
           RUN npm install
-
-          # Copy the rest of the code
           COPY . .
-
-          # Expose the port
           EXPOSE 3000
-
-          # Start the app
           CMD ["npm", "start"]
           EOF2
         EOF
 
-    - name: Copy files to VPS
+    # 5. Copy project files to EC2 using SCP
+    - name: Upload app files to EC2
       uses: appleboy/scp-action@v0.1.3
       with:
         host: ${{ secrets.SERVERIP }}
@@ -67,11 +55,12 @@ jobs:
         source: "."
         target: "~/my-website"
 
-    - name: Build and run Docker container on VPS
+    # 6. Build and run Docker container on EC2
+    - name: Build & Run Docker container
       uses: appleboy/ssh-action@v1.0.0
       with:
         host: ${{ secrets.SERVERIP }}
-        username: ${{ secrets.SERVERUSER}}
+        username: ${{ secrets.SERVERUSER }}
         key: ${{ secrets.PRIKEY }}
         script: |
           cd ~/my-website
