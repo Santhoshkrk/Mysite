@@ -41,15 +41,17 @@ jobs:
         source: "."
         target: "/my-website"
 
-    - name: Build and run Docker container on VPS
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.SERVERIP }}
-        username: ${{ secrets.SERVERUSER }}
-        key: ${{ secrets.PRIKEY }}
-        script: |
+    - name: Build Docker image on VPS
+      run: |
+        ssh -i ~/.ssh/id_rsa ${{ secrets.SERVERUSER }}@${{ secrets.SERVERIP }} << 'EOF'
           cd /my-website
-          docker stop my-website || true
-          docker rm my-website || true
-          docker build -t my-website .
-          docker run -d --name my-website -p 80:3000 my-website
+          sudo docker stop my-website || true
+          sudo docker rm my-website || true
+          sudo docker build -t my-website .
+        EOF
+
+    - name: Run Docker container on VPS
+      run: |
+        ssh -i ~/.ssh/id_rsa ${{ secrets.SERVERUSER }}@${{ secrets.SERVERIP }} << 'EOF'
+          sudo docker run -d --name my-website -p 80:3000 my-website
+        EOF
