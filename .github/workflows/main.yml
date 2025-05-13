@@ -16,7 +16,7 @@ jobs:
 
     - name: Debug IP
       run: |
-        echo "IP is: ${{ secrets.SERVERIP }}"
+        echo "Deploying to: ${{ secrets.SERVERIP }}"
 
     - name: Setup SSH access
       run: |
@@ -28,9 +28,8 @@ jobs:
     - name: Clean remote directory
       run: |
         ssh -i ~/.ssh/id_rsa ${{ secrets.SERVERUSER }}@${{ secrets.SERVERIP }} << 'EOF'
-          mkdir -p /my-website
-          cd /my-website
-          rm -rf *
+          sudo mkdir -p /my-website
+          sudo rm -rf /my-website/*
         EOF
 
     - name: Copy files to VPS
@@ -40,7 +39,7 @@ jobs:
         username: ${{ secrets.SERVERUSER }}
         key: ${{ secrets.PRIKEY }}
         source: "."
-        target: "~/my-website"
+        target: "/my-website"
 
     - name: Build and run Docker container on VPS
       uses: appleboy/ssh-action@v1.0.0
