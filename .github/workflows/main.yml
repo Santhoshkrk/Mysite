@@ -16,14 +16,14 @@ jobs:
       
     - name: Debug IP
       run: | 
-        echo "IP is: ${{ secrets.SERVER_IP }}"
+        echo "IP is: ${{ secrets.SERVERIP }}"
 
     - name: Setup SSH access
       run: |
         mkdir -p ~/.ssh
-        echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+        echo "${{ secrets.PRIKEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+        ssh-keyscan -H ${{ secrets.SERVERIP }} >> ~/.ssh/known_hosts
 
     - name: Clean remote directory
       run: |
@@ -36,18 +36,18 @@ jobs:
     - name: Copy files to VPS
       uses: appleboy/scp-action@v0.1.3
       with:
-        host: ${{ secrets.SERVER_IP }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SERVER_SSH_KEY }}
+        host: ${{ secrets.SERVERIP }}
+        username: ${{ secrets.SERVERUSER }}
+        key: ${{ secrets.PRIKEY }}
         source: "."
         target: "~/my-website"
 
     - name: Build and run Docker container on VPS
       uses: appleboy/ssh-action@v1.0.0
       with:
-        host: ${{ secrets.SERVER_IP }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SERVER_SSH_KEY }}
+        host: ${{ secrets.SERVERIP }}
+        username: ${{ secrets.SERVERUSER}}
+        key: ${{ secrets.PRIKEY }}
         script: |
           cd ~/my-website
           docker stop my-website || true
