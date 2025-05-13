@@ -4,8 +4,11 @@ FROM node:18
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files first
 COPY package*.json ./
+
+# Debug: Check if package.json is present
+RUN ls -al /app
 
 # Install dependencies
 RUN npm install
