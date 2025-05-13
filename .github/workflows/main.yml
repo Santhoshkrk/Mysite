@@ -1,4 +1,4 @@
-name: CI/CD Deploy to VPS
+name: CI/CD Deploy to EC2
 
 on:
   push:
@@ -27,12 +27,12 @@ jobs:
 
     - name: Clean remote directory
       run: |
-        ssh -i ~/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-          mkdir -p ~/my-website
-          cd ~/my-website
-          rm -rf *
+        ssh -i ~/.ssh/id_rsa ${{ secrets.SERVERUSER }}@${{ secrets.SERVERIP }} << 'EOF'
+        mkdir -p ~/my-website
+        cd ~/my-website
+        rm -rf *
         EOF
-
+        
     - name: Copy files to VPS
       uses: appleboy/scp-action@v0.1.3
       with:
