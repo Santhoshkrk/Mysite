@@ -13,26 +13,51 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-      
+
     - name: Debug IP
-      run: | 
+      run: |
         echo "IP is: ${{ secrets.SERVERIP }}"
 
-    - name: Setup SSH access
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.PRIKEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.SERVERIP }} >> ~/.ssh/known_hosts
+    - name: Setup SSH access using ssh-agent
+      uses: webfactory/ssh-agent@v0.5.3
+      with:
+        ssh-private-key: ${{ secrets.PRIKEY }}
 
     - name: Clean remote directory
       run: |
-        ssh -i ~/.ssh/id_rsa ${{ secrets.SERVERUSER }}@${{ secrets.SERVERIP }} << 'EOF'
-        mkdir -p ~/my-website
-        cd ~/my-website
-        rm -rf *
+        ssh -T -i ~/.ssh/id_rsa ${{ secrets.SERVERUSER }}@${{ secrets.SERVERIP }} << 'EOF'
+          mkdir -p ~/my-website
+          cd ~/my-website
+          rm -rf *
         EOF
-        
+
+    - name: Create Dockerfile on VPS
+      run: |
+        ssh -T -i ~/.ssh/id_rsa ${{ secrets.SERVERUSER }}@${{ secrets.SERVERIP }} << 'EOF'
+          cat << 'EOF2' > ~/my-website/Dockerfile
+          # Use Node base image
+          FROM node:18
+
+          # Set working directory
+          WORKDIR /app
+
+          # Copy package files
+          COPY package*.json ./
+
+          # Install dependencies
+          RUN npm install
+
+          # Copy the rest of the code
+          COPY . .
+
+          # Expose the port
+          EXPOSE 3000
+
+          # Start the app
+          CMD ["npm", "start"]
+          EOF2
+        EOF
+
     - name: Copy files to VPS
       uses: appleboy/scp-action@v0.1.3
       with:
@@ -50,7 +75,7 @@ jobs:
         key: ${{ secrets.PRIKEY }}
         script: |
           cd ~/my-website
-          docker stop my-website || true
-          docker rm my-website || true
-          docker build -t my-website .
-          docker run -d --name my-website -p 80:3000 my-website
+          sudo docker stop my-website || true
+          sudo docker rm my-website || true
+          sudo docker build -t my-website .
+          sudo docker run -d --name my-website -p 80:3000 my-website
