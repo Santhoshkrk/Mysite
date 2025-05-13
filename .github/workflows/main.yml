@@ -15,7 +15,7 @@ jobs:
       uses: actions/checkout@v3
       
     - name: Debug IP
-      run: echo "IP is: ${{ secrets.SERVER_IP }}"
+      run:  echo "IP is: ${{ secrets.SERVER_IP }}"
 
     - name: Setup SSH access
       run: |
